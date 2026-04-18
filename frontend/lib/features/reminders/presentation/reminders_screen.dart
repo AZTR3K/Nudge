@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nudge/core/theme/app_colors.dart';
 import 'package:nudge/features/subscriptions/providers/subscription_provider.dart';
+import 'package:nudge/features/subscriptions/presentation/widgets/payment_action_sheets.dart'; // IMPORT ADDED
 
 class RemindersScreen extends ConsumerStatefulWidget {
   const RemindersScreen({super.key});
@@ -12,7 +13,25 @@ class RemindersScreen extends ConsumerStatefulWidget {
 
 class _RemindersScreenState extends ConsumerState<RemindersScreen> {
   bool _isMuted = false;
-  int _selectedTabIndex = 0; // 0 for Upcoming, 1 for History
+  int _selectedTabIndex = 0;
+
+  void _showSnoozeSheet(BuildContext context, Map<String, dynamic> sub) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => SnoozeSheet(sub: sub),
+    );
+  }
+
+  void _showEditSheet(BuildContext context, Map<String, dynamic> sub) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => EditPaymentSheet(sub: sub),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,29 +63,26 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
         ],
       ),
       body: subscriptionsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
         error: (error, stack) => Center(child: Text('Error: $error')),
         data: (subscriptions) {
           final now = DateTime.now();
           final today = DateTime(now.year, now.month, now.day);
 
-          // Filter the list based on the selected tab
           final filteredSubscriptions = subscriptions.where((sub) {
-            final dueDate = DateTime.parse(sub['due_date']);
-            final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
-            final difference = dueDay.difference(today).inDays;
-
+            final status = sub['status'] ?? 'Pending';
             if (_selectedTabIndex == 0) {
-              return difference >= 0; // Upcoming & Today
+              return status == 'Pending';
             } else {
-              return difference < 0; // Past / History
+              return status == 'Paid' || status == 'Missed';
             }
           }).toList();
 
           return ListView(
             padding: const EdgeInsets.all(24.0),
             children: [
-              // Mute All Notifications Card
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -120,7 +136,6 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Interactive Tabs
               Row(
                 children: [
                   GestureDetector(
@@ -182,30 +197,26 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Empty State
               if (filteredSubscriptions.isEmpty)
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32.0),
                     child: Text(
                       _selectedTabIndex == 0
-                          ? "No upcoming reminders."
-                          : "No past reminders.",
+                          ? "All caught up! No pending bills."
+                          : "No past records found.",
                       style: const TextStyle(color: AppColors.onSurfaceVariant),
                     ),
                   ),
                 ),
 
-              // Dynamic Reminder Cards
               ...filteredSubscriptions.map((sub) {
                 final dueDate = DateTime.parse(sub['due_date']);
-                // Strip the time to calculate strict day differences
                 final difference = DateTime(
                   dueDate.year,
                   dueDate.month,
                   dueDate.day,
                 ).difference(today).inDays;
-
                 final monthStr = [
                   "Jan",
                   "Feb",
@@ -220,6 +231,7 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
                   "Nov",
                   "Dec",
                 ][dueDate.month - 1];
+                final status = sub['status'] ?? 'Pending';
 
                 String dateLabel;
                 if (difference == 0) {
@@ -237,19 +249,28 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
                 IconData statusIcon;
                 Color statusColor;
 
-                // Adjust logic and styling based on whether it is overdue or upcoming
-                if (difference < 0) {
-                  statusText = "Overdue by ${difference.abs()} days.";
-                  statusIcon = Icons.error_outline;
-                  statusColor = AppColors.error;
-                } else if (difference == 0) {
-                  statusText = "Due today. Prepare for deduction.";
-                  statusIcon = Icons.info_outline;
+                if (status == 'Paid') {
+                  statusText = "Payment completed successfully.";
+                  statusIcon = Icons.check_circle;
                   statusColor = AppColors.primary;
+                } else if (status == 'Missed') {
+                  statusText = "Payment missed. Action required.";
+                  statusIcon = Icons.cancel;
+                  statusColor = AppColors.error;
                 } else {
-                  statusText = "Due in $difference days. Auto-pay is active.";
-                  statusIcon = Icons.check_circle_outline;
-                  statusColor = AppColors.primaryDim;
+                  if (difference < 0) {
+                    statusText = "Overdue by ${difference.abs()} days.";
+                    statusIcon = Icons.warning_amber_rounded;
+                    statusColor = const Color(0xFFF59E0B);
+                  } else if (difference == 0) {
+                    statusText = "Due today. Prepare for deduction.";
+                    statusIcon = Icons.info_outline;
+                    statusColor = AppColors.primary;
+                  } else {
+                    statusText = "Due in $difference days. Auto-pay is active.";
+                    statusIcon = Icons.schedule;
+                    statusColor = AppColors.primaryDim;
+                  }
                 }
 
                 return Padding(
@@ -261,6 +282,9 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
                     statusText: statusText,
                     statusIcon: statusIcon,
                     statusColor: statusColor,
+                    showActions: _selectedTabIndex == 0,
+                    onSnooze: () => _showSnoozeSheet(context, sub),
+                    onEdit: () => _showEditSheet(context, sub),
                   ),
                 );
               }),
@@ -279,6 +303,9 @@ class ReminderCard extends StatelessWidget {
   final String statusText;
   final IconData statusIcon;
   final Color statusColor;
+  final bool showActions;
+  final VoidCallback onSnooze;
+  final VoidCallback onEdit;
 
   const ReminderCard({
     super.key,
@@ -288,6 +315,9 @@ class ReminderCard extends StatelessWidget {
     required this.statusText,
     required this.statusIcon,
     required this.statusColor,
+    required this.showActions,
+    required this.onSnooze,
+    required this.onEdit,
   });
 
   @override
@@ -304,10 +334,7 @@ class ReminderCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Left Accent Glow Line
             Container(width: 4, color: statusColor),
-
-            // Main Card Content
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -323,8 +350,6 @@ class ReminderCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-
-                    // Title & Amount
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,8 +375,6 @@ class ReminderCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-
-                    // Status Subtitle
                     Row(
                       children: [
                         Icon(statusIcon, size: 14, color: statusColor),
@@ -366,16 +389,16 @@ class ReminderCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-
-                    // Action Buttons (Snooze / Edit)
-                    Row(
-                      children: [
-                        _buildActionButton(Icons.snooze),
-                        const SizedBox(width: 12),
-                        _buildActionButton(Icons.edit_outlined),
-                      ],
-                    ),
+                    if (showActions) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          _buildActionButton(Icons.snooze, onSnooze),
+                          const SizedBox(width: 12),
+                          _buildActionButton(Icons.edit_outlined, onEdit),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -386,19 +409,23 @@ class ReminderCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(IconData icon) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainer,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.2),
+  Widget _buildActionButton(IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainer,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.2),
+          ),
         ),
-      ),
-      child: Center(
-        child: Icon(icon, size: 18, color: AppColors.onSurfaceVariant),
+        child: Center(
+          child: Icon(icon, size: 18, color: AppColors.onSurfaceVariant),
+        ),
       ),
     );
   }

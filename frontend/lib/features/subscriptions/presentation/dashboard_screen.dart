@@ -6,46 +6,52 @@ import 'package:nudge/features/subscriptions/presentation/history_screen.dart';
 import 'package:nudge/features/subscriptions/providers/subscription_provider.dart';
 import 'package:nudge/features/subscriptions/presentation/add_payment_screen.dart';
 import 'package:nudge/features/reminders/presentation/reminders_screen.dart';
+import 'package:nudge/features/subscriptions/presentation/widgets/payment_action_sheets.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // This now listens to a LIVE STREAM
     final subscriptionsAsync = ref.watch(subscriptionsFutureProvider);
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Nudge'),
+        title: const Text(
+          'Nudge',
+          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2),
+        ),
         actions: [
           IconButton(
             icon: const Icon(
               Icons.notifications_none,
               color: AppColors.primary,
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const RemindersScreen()),
-              );
-            },
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const RemindersScreen()),
+            ),
           ),
         ],
       ),
       body: subscriptionsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
         error: (error, stack) => Center(child: Text('Error: $error')),
         data: (subscriptions) {
-          // FIX: Only calculate and show bills that are actually 'Pending'
-          final upcomingBills = subscriptions.where((sub) {
-            final status = sub['status'] ?? 'Pending';
-            return status == 'Pending';
+          // 1. Filter out PAID bills. Dashboard is for what's next.
+          final activeBills = subscriptions.where((sub) {
+            final rawStatus = sub['status']?.toString().trim() ?? 'Pending';
+            return rawStatus != 'Paid';
           }).toList();
 
+          // 2. Calculate Total Due
           double totalDue = 0;
-          for (var sub in upcomingBills) {
+          for (var sub in activeBills) {
             totalDue += (sub['amount'] as num).toDouble();
           }
 
@@ -55,7 +61,7 @@ class DashboardScreen extends ConsumerWidget {
               vertical: 8.0,
             ),
             children: [
-              // Summary Hero Card
+              // Summary Hero
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -73,7 +79,7 @@ class DashboardScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Total Due This Month',
+                      'Total Due',
                       style: TextStyle(
                         color: AppColors.onSurfaceVariant,
                         fontSize: 14,
@@ -92,7 +98,6 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // Quick stats embedded
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -106,14 +111,14 @@ class DashboardScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Active Bills',
+                                'Pending Items',
                                 style: TextStyle(
                                   color: AppColors.onSurfaceVariant,
                                   fontSize: 12,
                                 ),
                               ),
                               Text(
-                                '${upcomingBills.length}', // Uses the filtered list count
+                                '${activeBills.length}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
@@ -152,15 +157,6 @@ class DashboardScreen extends ConsumerWidget {
                             colors: [AppColors.primaryDim, AppColors.primary],
                           ),
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryDim.withValues(
-                                alpha: 0.3,
-                              ),
-                              blurRadius: 16,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
                         ),
                         child: const Column(
                           children: [
@@ -196,11 +192,6 @@ class DashboardScreen extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceContainerHighest,
-                          border: Border.all(
-                            color: AppColors.outlineVariant.withValues(
-                              alpha: 0.2,
-                            ),
-                          ),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Column(
@@ -224,55 +215,56 @@ class DashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 32),
 
-              // Upcoming List
-              Text("Upcoming", style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                "Action Required",
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 16),
-              if (upcomingBills.isEmpty)
+
+              if (activeBills.isEmpty)
                 const Center(
                   child: Padding(
-                    padding: EdgeInsets.all(32.0),
+                    padding: EdgeInsets.all(32),
                     child: Text(
-                      "No upcoming bills.",
+                      "All caught up!",
                       style: TextStyle(color: AppColors.onSurfaceVariant),
                     ),
                   ),
                 ),
 
-              ...upcomingBills.map((sub) {
+              ...activeBills.map((sub) {
                 final dueDate = DateTime.parse(sub['due_date']);
                 final isOverdue = dueDate.isBefore(
                   DateTime.now().subtract(const Duration(days: 1)),
                 );
-
-                final monthStr = [
-                  "Jan",
-                  "Feb",
-                  "Mar",
-                  "Apr",
-                  "May",
-                  "Jun",
-                  "Jul",
-                  "Aug",
-                  "Sep",
-                  "Oct",
-                  "Nov",
-                  "Dec",
-                ][dueDate.month - 1];
                 final formattedDate =
-                    "$monthStr ${dueDate.day.toString().padLeft(2, '0')}";
+                    "${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dueDate.month - 1]} ${dueDate.day.toString().padLeft(2, '0')}";
+
+                final String dbStatus = sub['status']?.toString() ?? 'Pending';
+
+                // Final visual mapping
+                PaymentStatus paymentStatus = PaymentStatus.pending;
+                String subtitleText = 'Upcoming $formattedDate';
+
+                if (dbStatus == 'Missed' || isOverdue) {
+                  paymentStatus = PaymentStatus.missed;
+                  subtitleText = 'Overdue $formattedDate';
+                }
 
                 return PaymentCard(
                   title: sub['service_name'],
                   amount: (sub['amount'] as num).toStringAsFixed(2),
-                  subtitle: isOverdue
-                      ? 'Overdue $formattedDate'
-                      : 'Upcoming $formattedDate',
-                  status: isOverdue
-                      ? PaymentStatus
-                            .missed // Show visual warning if past due
-                      : PaymentStatus.pending,
+                  subtitle: subtitleText,
+                  status: paymentStatus,
                   icon: Icons.receipt_long,
-                  onTap: () {},
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.transparent,
+                      isScrollControlled: true,
+                      builder: (context) => EditPaymentSheet(sub: sub),
+                    );
+                  },
                 );
               }),
             ],

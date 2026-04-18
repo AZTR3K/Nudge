@@ -8,26 +8,29 @@ final subscriptionServiceProvider = Provider<SubscriptionService>((ref) {
   return SubscriptionService(Supabase.instance.client);
 });
 
-// The modern Riverpod approach: Notifier
+// The modern Riverpod approach for tracking UI states (like loading buttons)
 class SubmittingNotifier extends Notifier<bool> {
   @override
   bool build() => false; // Initial state
 
-  // Create a safe method to update the state from our UI
   void setStatus(bool isSubmitting) {
     state = isSubmitting;
   }
 }
 
-// Expose the Notifier to the rest of the app
 final isSubmittingProvider = NotifierProvider<SubmittingNotifier, bool>(
   SubmittingNotifier.new,
 );
 
-// Expose the stream of subscriptions to the UI
-final subscriptionsFutureProvider = FutureProvider<List<Map<String, dynamic>>>((
+// ---------------------------------------------------------
+// FIX: Changed from FutureProvider to StreamProvider
+// and updated the method call to getSubscriptionsStream()
+// ---------------------------------------------------------
+final subscriptionsFutureProvider = StreamProvider<List<Map<String, dynamic>>>((
   ref,
-) async {
+) {
   final service = ref.watch(subscriptionServiceProvider);
-  return await service.getSubscriptions();
+
+  // This now points to the new Stream method in your service!
+  return service.getSubscriptionsStream();
 });

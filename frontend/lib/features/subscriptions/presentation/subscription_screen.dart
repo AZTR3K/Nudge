@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nudge/core/theme/app_colors.dart';
 import 'package:nudge/core/widgets/payment_card.dart';
 import 'package:nudge/features/subscriptions/providers/subscription_provider.dart';
+import 'package:nudge/features/subscriptions/presentation/widgets/payment_action_sheets.dart'; // IMPORT ADDED
 
 class SubscriptionsScreen extends ConsumerWidget {
   const SubscriptionsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch your real database stream!
     final subscriptionsAsync = ref.watch(subscriptionsFutureProvider);
 
     return Scaffold(
@@ -64,7 +64,6 @@ class SubscriptionsScreen extends ConsumerWidget {
               final formattedDate =
                   "$monthStr ${dueDate.day.toString().padLeft(2, '0')}";
 
-              // FIX: Dynamically read the database status
               final dbStatus = sub['status'] ?? 'Pending';
               PaymentStatus paymentStatus;
               String subtitleText;
@@ -76,10 +75,8 @@ class SubscriptionsScreen extends ConsumerWidget {
                 paymentStatus = PaymentStatus.missed;
                 subtitleText = 'Failed • Action required';
               } else {
-                // It is Pending. We check if it is late.
                 if (isOverdue) {
-                  paymentStatus =
-                      PaymentStatus.missed; // Visually alert the user
+                  paymentStatus = PaymentStatus.missed;
                   subtitleText = 'Overdue since $formattedDate';
                 } else {
                   paymentStatus = PaymentStatus.pending;
@@ -93,7 +90,14 @@ class SubscriptionsScreen extends ConsumerWidget {
                 subtitle: subtitleText,
                 status: paymentStatus,
                 icon: Icons.stars_outlined,
-                onTap: () {},
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: Colors.transparent,
+                    isScrollControlled: true,
+                    builder: (context) => EditPaymentSheet(sub: sub),
+                  );
+                },
               );
             },
           );
