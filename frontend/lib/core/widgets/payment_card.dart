@@ -29,8 +29,8 @@ class PaymentCard extends StatelessWidget {
           boxShadow: const [
             BoxShadow(
               color: Colors.black26,
-              blurRadius: 10,
-              offset: Offset(0, 4),
+              blurRadius: 5,
+              offset: Offset(0, 2),
             ),
           ],
         ),
