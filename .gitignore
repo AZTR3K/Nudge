@@ -6,6 +6,7 @@
 # Supabase Local Config
 supabase/.temp/
 supabase/.branch
+supabase/.branches/
 
 # IDE Files
 .vscode/
