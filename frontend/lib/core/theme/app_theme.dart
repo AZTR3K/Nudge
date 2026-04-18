@@ -15,6 +15,35 @@ class AppTheme {
         surface: AppColors.surface,
         error: AppColors.error,
       ),
+
+      navigationBarTheme: NavigationBarThemeData(
+        // The pill background color (using low opacity so it's not blinding)
+        indicatorColor: AppColors.primary.withOpacity(0.35),
+
+        // Handle Icon colors for selected vs unselected states
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AppColors.primary);
+          }
+          return const IconThemeData(color: AppColors.onSurfaceVariant);
+        }),
+
+        // Handle Text colors for selected vs unselected states
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return GoogleFonts.manrope(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            );
+          }
+          return GoogleFonts.manrope(
+            color: AppColors.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
+          );
+        }),
+      ),
       // Typography: Space Grotesk for Headlines, Manrope for Body
       textTheme: TextTheme(
         displayLarge: GoogleFonts.spaceGrotesk(

@@ -48,7 +48,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onDestinationSelected,
-        backgroundColor: AppColors.surfaceContainerLowest,
+        backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
         shadowColor: AppColors.outlineVariant,
         elevation: 8,
