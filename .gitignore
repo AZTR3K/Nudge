@@ -1,0 +1,17 @@
+# Environment Variables
+.env
+.env.development
+.env.production
+
+# Supabase Local Config
+supabase/.temp/
+supabase/.branch
+
+# IDE Files
+.vscode/
+.idea/
+*.iml
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
