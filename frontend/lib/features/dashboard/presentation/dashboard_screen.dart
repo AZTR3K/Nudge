@@ -5,7 +5,7 @@ import 'package:nudge/core/widgets/payment_card.dart';
 import 'package:nudge/features/subscriptions/presentation/history_screen.dart';
 import 'package:nudge/features/subscriptions/providers/subscription_provider.dart';
 import 'package:nudge/features/subscriptions/presentation/add_payment_screen.dart';
-import 'package:nudge/features/reminders/presentation/reminders_screen.dart'; // Add this import
+import 'package:nudge/features/reminders/presentation/reminders_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -26,7 +26,6 @@ class DashboardScreen extends ConsumerWidget {
               color: AppColors.primary,
             ),
             onPressed: () {
-              // FIX: Route to the Reminders Screen when the bell is tapped
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const RemindersScreen()),
@@ -229,8 +228,13 @@ class DashboardScreen extends ConsumerWidget {
                     child: Text("No upcoming bills."),
                   ),
                 ),
+
               ...subscriptions.map((sub) {
                 final dueDate = DateTime.parse(sub['due_date']);
+                final isOverdue = dueDate.isBefore(
+                  DateTime.now().subtract(const Duration(days: 1)),
+                );
+
                 final monthStr = [
                   "Jan",
                   "Feb",
@@ -247,10 +251,17 @@ class DashboardScreen extends ConsumerWidget {
                 ][dueDate.month - 1];
                 final formattedDate = "$monthStr ${dueDate.day}";
 
+                // Feed the correct status down to our new PaymentCard
                 return PaymentCard(
                   title: sub['service_name'],
                   amount: (sub['amount'] as num).toStringAsFixed(2),
-                  dueDate: formattedDate,
+                  subtitle: isOverdue
+                      ? 'Due $formattedDate'
+                      : 'Upcoming $formattedDate',
+                  status: isOverdue
+                      ? PaymentStatus.missed
+                      : PaymentStatus.pending,
+                  icon: Icons.receipt_long,
                   onTap: () {},
                 );
               }),
