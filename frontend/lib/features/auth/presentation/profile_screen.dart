@@ -6,6 +6,28 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:nudge/core/theme/app_colors.dart';
 import 'package:nudge/features/auth/providers/auth_provider.dart';
 
+// ---------------------------------------------------------
+// FIX: Upgraded to a rock-solid StateNotifierProvider
+// ---------------------------------------------------------
+class NotificationsNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    return true; // Default state is true
+  }
+
+  void setToggle(bool value) {
+    state = value;
+  }
+}
+
+final notificationsEnabledProvider =
+    NotifierProvider<NotificationsNotifier, bool>(() {
+      return NotificationsNotifier();
+    });
+
+// ---------------------------------------------------------
+// FIX: The missing ProfileScreen class is back!
+// ---------------------------------------------------------
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -89,11 +111,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final file = File(image.path);
       final userId = Supabase.instance.client.auth.currentUser!.id;
 
-      // ✅ Use 'public' bucket which exists by default in Supabase
-      // OR change 'avatars' to whatever bucket you created in Supabase dashboard
-      const bucketName =
-          'avatars'; // must match exactly what's in Supabase Storage
-      final path = '$userId/avatar.png'; // folder per user, avoids root clutter
+      const bucketName = 'avatars';
+      final path = '$userId/avatar.png';
 
       await Supabase.instance.client.storage
           .from(bucketName)
@@ -106,7 +125,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           );
 
-      // ✅ Append cache-buster so the UI refreshes even if URL is the same
       final imageUrl =
           '${Supabase.instance.client.storage.from(bucketName).getPublicUrl(path)}'
           '?t=${DateTime.now().millisecondsSinceEpoch}';
@@ -116,7 +134,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       );
     } on StorageException catch (e) {
       if (!mounted) return;
-      // ✅ Surface the actual Supabase storage error message
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Storage error: ${e.message}')));
@@ -164,7 +181,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ? NetworkImage(avatarUrl)
                         : null,
                     child: avatarUrl == null
-                        ? Icon(Icons.person, size: 52, color: AppColors.primary)
+                        ? const Icon(
+                            Icons.person,
+                            size: 52,
+                            color: AppColors.primary,
+                          )
                         : null,
                   ),
                 ),
@@ -235,7 +256,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 32),
 
           // ── Account Section ─────────────────────────────────────
-          _SectionLabel(label: 'ACCOUNT'),
+          const _SectionLabel(label: 'ACCOUNT'),
           _SettingsTile(
             icon: Icons.person_outline,
             label: 'Full Name',
@@ -251,17 +272,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 24),
 
           // ── App Section ─────────────────────────────────────────
-          _SectionLabel(label: 'APP'),
+          const _SectionLabel(label: 'APP'),
           _SettingsTile(
             icon: Icons.notifications_outlined,
             label: 'Notifications',
-            trailing: Switch(
-              value: true, // hook up to a provider when ready
-              onChanged: (_) {},
-              activeColor: AppColors.primary,
+            trailing: Consumer(
+              builder: (context, ref, child) {
+                final isEnabled = ref.watch(notificationsEnabledProvider);
+                return Switch(
+                  value: isEnabled,
+                  onChanged: (val) {
+                    ref
+                        .read(notificationsEnabledProvider.notifier)
+                        .setToggle(val);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          val ? 'Notifications enabled' : 'Notifications muted',
+                        ),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  activeThumbColor: AppColors.primary,
+                  activeTrackColor: AppColors.primaryDim.withValues(alpha: 0.5),
+                );
+              },
             ),
           ),
-          _SettingsTile(
+          const _SettingsTile(
             icon: Icons.info_outline,
             label: 'App Version',
             value: '1.0.0',
@@ -270,7 +310,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 24),
 
           // ── Danger Zone ─────────────────────────────────────────
-          _SectionLabel(label: 'DANGER ZONE'),
+          const _SectionLabel(label: 'DANGER ZONE'),
           _SettingsTile(
             icon: Icons.logout,
             label: 'Log Out',

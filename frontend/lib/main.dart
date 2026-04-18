@@ -55,18 +55,3 @@ class AuthGate extends ConsumerWidget {
     );
   }
 }
-
-Future<void> _ensureStorageBucket() async {
-  try {
-    final buckets = await Supabase.instance.client.storage.listBuckets();
-    final exists = buckets.any((b) => b.name == 'avatars');
-    if (!exists) {
-      await Supabase.instance.client.storage.createBucket(
-        'avatars',
-        const BucketOptions(public: true),
-      );
-    }
-  } catch (e) {
-    debugPrint('Bucket setup error: $e');
-  }
-}
