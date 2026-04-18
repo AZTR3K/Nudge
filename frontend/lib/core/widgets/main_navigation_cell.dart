@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:nudge/core/theme/app_colors.dart';
 import 'package:nudge/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:nudge/features/auth/presentation/profile_screen.dart';
-import 'package:nudge/features/reminders/presentation/reminders_screen.dart';
 import 'package:nudge/features/subscriptions/presentation/subscription_screen.dart';
 
 class MainNavigationShell extends StatefulWidget {
@@ -15,10 +14,10 @@ class MainNavigationShell extends StatefulWidget {
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _selectedIndex = 0;
 
+  // FIX: Removed RemindersScreen from the stack entirely
   final List<Widget> _screens = const [
     DashboardScreen(),
     SubscriptionsScreen(),
-    RemindersScreen(),
     ProfileScreen(),
   ];
 
@@ -30,7 +29,6 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _screens),
-      // The floating action button has been completely removed!
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onDestinationSelected,
@@ -48,11 +46,6 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             icon: Icon(Icons.credit_card_outlined),
             selectedIcon: Icon(Icons.credit_card),
             label: 'Subscriptions',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.notifications_outlined),
-            selectedIcon: Icon(Icons.notifications),
-            label: 'Reminders',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),

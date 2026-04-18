@@ -5,6 +5,7 @@ import 'package:nudge/core/widgets/payment_card.dart';
 import 'package:nudge/features/subscriptions/presentation/history_screen.dart';
 import 'package:nudge/features/subscriptions/providers/subscription_provider.dart';
 import 'package:nudge/features/subscriptions/presentation/add_payment_screen.dart';
+import 'package:nudge/features/reminders/presentation/reminders_screen.dart'; // Add this import
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -24,7 +25,13 @@ class DashboardScreen extends ConsumerWidget {
               Icons.notifications_none,
               color: AppColors.primary,
             ),
-            onPressed: () {},
+            onPressed: () {
+              // FIX: Route to the Reminders Screen when the bell is tapped
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RemindersScreen()),
+              );
+            },
           ),
         ],
       ),
