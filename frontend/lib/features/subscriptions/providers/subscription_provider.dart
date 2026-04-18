@@ -23,3 +23,11 @@ class SubmittingNotifier extends Notifier<bool> {
 final isSubmittingProvider = NotifierProvider<SubmittingNotifier, bool>(
   SubmittingNotifier.new,
 );
+
+// Expose the stream of subscriptions to the UI
+final subscriptionsStreamProvider = StreamProvider<List<Map<String, dynamic>>>((
+  ref,
+) {
+  final service = ref.watch(subscriptionServiceProvider);
+  return service.getSubscriptionsStream();
+});

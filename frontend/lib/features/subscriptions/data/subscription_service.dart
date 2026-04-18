@@ -23,4 +23,18 @@ class SubscriptionService {
       'category': category ?? 'General',
     });
   }
+
+  // NEW: Stream to fetch subscriptions in real-time
+  Stream<List<Map<String, dynamic>>> getSubscriptionsStream() {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw Exception("User must be logged in to fetch subscriptions");
+    }
+
+    return _supabase
+        .from('subscriptions')
+        .stream(primaryKey: ['id'])
+        .eq('user_id', user.id)
+        .order('due_date', ascending: true); // Show closest due dates first
+  }
 }

@@ -65,7 +65,7 @@ class PaymentCard extends StatelessWidget {
                     ],
                   ),
                   Text(
-                    '\$$amount',
+                    'Rs $amount',
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.primaryColor,

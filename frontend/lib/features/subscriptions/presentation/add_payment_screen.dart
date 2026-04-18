@@ -35,6 +35,9 @@ class _AddPaymentScreenState extends ConsumerState<AddPaymentScreen> {
             dueDate: _selectedDate,
           );
 
+      // Force Riverpod to instantly refresh the Dashboard data
+      ref.invalidate(subscriptionsStreamProvider);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Payment saved successfully!')),
@@ -87,10 +90,20 @@ class _AddPaymentScreenState extends ConsumerState<AddPaymentScreen> {
                 decimal: true,
               ),
               decoration: const InputDecoration(
-                labelText: 'Amount (\$)',
+                labelText: 'Amount (Rs)',
                 hintText: '0.00',
                 border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.attach_money),
+                prefixIcon: Padding(
+                  padding: EdgeInsets.all(14.0),
+                  child: Text(
+                    'Rs ',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+                prefixIconConstraints: BoxConstraints(
+                  minWidth: 0,
+                  minHeight: 0,
+                ),
               ),
             ),
             const SizedBox(height: 16),
