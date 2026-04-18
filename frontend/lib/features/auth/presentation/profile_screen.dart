@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nudge/core/theme/app_colors.dart';
+import 'package:nudge/features/auth/providers/auth_provider.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -20,16 +22,11 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'John Doe',
+            'Nudge User', // We can fetch the real name later!
             textAlign: TextAlign.center,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
-          ),
-          Text(
-            'john.doe@example.com',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 32),
           const Divider(),
@@ -52,7 +49,10 @@ class ProfileScreen extends StatelessWidget {
               'Log Out',
               style: TextStyle(color: AppColors.dangerRed),
             ),
-            onTap: () {},
+            onTap: () {
+              // Trigger our Auth Engine logic
+              ref.read(authServiceProvider).signOut();
+            },
           ),
         ],
       ),
