@@ -12,6 +12,7 @@ class RemindersScreen extends ConsumerStatefulWidget {
 
 class _RemindersScreenState extends ConsumerState<RemindersScreen> {
   bool _isMuted = false;
+  int _selectedTabIndex = 0; // 0 for Upcoming, 1 for History
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +47,22 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Error: $error')),
         data: (subscriptions) {
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+
+          // Filter the list based on the selected tab
+          final filteredSubscriptions = subscriptions.where((sub) {
+            final dueDate = DateTime.parse(sub['due_date']);
+            final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
+            final difference = dueDay.difference(today).inDays;
+
+            if (_selectedTabIndex == 0) {
+              return difference >= 0; // Upcoming & Today
+            } else {
+              return difference < 0; // Past / History
+            }
+          }).toList();
+
           return ListView(
             padding: const EdgeInsets.all(24.0),
             children: [
@@ -93,7 +110,6 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
                     Switch(
                       value: _isMuted,
                       onChanged: (val) => setState(() => _isMuted = val),
-                      // FIX: Updated activeColor to activeThumbColor to satisfy linter
                       activeThumbColor: AppColors.primary,
                       activeTrackColor: AppColors.primaryDim.withValues(
                         alpha: 0.5,
@@ -104,58 +120,91 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Tabs
+              // Interactive Tabs
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: const Text(
-                      'Upcoming',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                  GestureDetector(
+                    onTap: () => setState(() => _selectedTabIndex = 0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _selectedTabIndex == 0
+                            ? AppColors.surfaceContainerHighest
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Text(
+                        'Upcoming',
+                        style: TextStyle(
+                          color: _selectedTabIndex == 0
+                              ? AppColors.primary
+                              : AppColors.onSurfaceVariant,
+                          fontWeight: _selectedTabIndex == 0
+                              ? FontWeight.bold
+                              : FontWeight.w600,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 24),
-                  const Text(
-                    'History',
-                    style: TextStyle(
-                      color: AppColors.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => setState(() => _selectedTabIndex = 1),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _selectedTabIndex == 1
+                            ? AppColors.surfaceContainerHighest
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Text(
+                        'History',
+                        style: TextStyle(
+                          color: _selectedTabIndex == 1
+                              ? AppColors.primary
+                              : AppColors.onSurfaceVariant,
+                          fontWeight: _selectedTabIndex == 1
+                              ? FontWeight.bold
+                              : FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
 
-              if (subscriptions.isEmpty)
-                const Center(
+              // Empty State
+              if (filteredSubscriptions.isEmpty)
+                Center(
                   child: Padding(
-                    padding: EdgeInsets.all(32.0),
-                    child: Text("No upcoming reminders."),
+                    padding: const EdgeInsets.all(32.0),
+                    child: Text(
+                      _selectedTabIndex == 0
+                          ? "No upcoming reminders."
+                          : "No past reminders.",
+                      style: const TextStyle(color: AppColors.onSurfaceVariant),
+                    ),
                   ),
                 ),
 
               // Dynamic Reminder Cards
-              ...subscriptions.map((sub) {
+              ...filteredSubscriptions.map((sub) {
                 final dueDate = DateTime.parse(sub['due_date']);
-                final now = DateTime.now();
                 // Strip the time to calculate strict day differences
                 final difference = DateTime(
                   dueDate.year,
                   dueDate.month,
                   dueDate.day,
-                ).difference(DateTime(now.year, now.month, now.day)).inDays;
+                ).difference(today).inDays;
 
                 final monthStr = [
                   "Jan",
