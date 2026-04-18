@@ -9,6 +9,12 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final user = ref.watch(currentUserProvider);
+
+    // 2. Extract the name from metadata with a fallback
+    // Supabase stores registration data in a map called 'user_metadata'
+    final userName = user?.userMetadata?['full_name'] ?? 'Nudge User';
+    final userEmail = user?.email ?? 'No email found';
 
     return Scaffold(
       appBar: AppBar(
@@ -28,13 +34,23 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
-            'Nudge User',
+            userName, // Dynamic name
             textAlign: TextAlign.center,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            userEmail, // Subtitle email
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 32),
           const SizedBox(height: 32),
           const Divider(color: AppColors.outlineVariant),
           ListTile(

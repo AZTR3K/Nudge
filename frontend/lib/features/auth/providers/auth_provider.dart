@@ -6,6 +6,11 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
   return Supabase.instance.client.auth.onAuthStateChange;
 });
 
+final currentUserProvider = Provider<User?>((ref) {
+  final authState = ref.watch(authStateProvider).value;
+  return authState?.session?.user ?? Supabase.instance.client.auth.currentUser;
+});
+
 // 2. The provider that holds our login/register functions
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(Supabase.instance.client);
@@ -14,6 +19,8 @@ final authServiceProvider = Provider<AuthService>((ref) {
 class AuthService {
   final SupabaseClient _supabase;
   AuthService(this._supabase);
+
+  User? get currentUser => _supabase.auth.currentUser;
 
   Future<void> signIn(String email, String password) async {
     await _supabase.auth.signInWithPassword(email: email, password: password);
