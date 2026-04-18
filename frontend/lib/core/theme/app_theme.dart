@@ -3,73 +3,72 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class AppTheme {
-  // We only need a dark theme for the Luminous Terminal
-  static ThemeData get darkTheme {
+  static ThemeData get darkTheme => _buildTheme(Brightness.dark);
+  static ThemeData get lightTheme => _buildTheme(Brightness.light);
+
+  static ThemeData _buildTheme(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: AppColors.surface,
+      brightness: brightness,
+      scaffoldBackgroundColor: isDark ? AppColors.surface : Colors.white,
       primaryColor: AppColors.primary,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        brightness: brightness,
         primary: AppColors.primary,
-        surface: AppColors.surface,
+        surface: isDark ? AppColors.surface : Colors.white,
         error: AppColors.error,
       ),
-
       navigationBarTheme: NavigationBarThemeData(
-        // FIX: Updated to withValues to satisfy the linter
-        indicatorColor: AppColors.primary.withValues(alpha: 0.35),
-
-        // Handle Icon colors for selected vs unselected states
+        backgroundColor: isDark ? AppColors.surfaceContainer : Colors.grey[50],
+        indicatorColor: AppColors.primary.withValues(alpha: 0.2),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const IconThemeData(color: AppColors.primary);
           }
-          return const IconThemeData(color: AppColors.onSurfaceVariant);
+          return IconThemeData(
+            color: isDark ? AppColors.onSurfaceVariant : Colors.grey[600],
+          );
         }),
-
-        // Handle Text colors for selected vs unselected states
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return GoogleFonts.manrope(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-            );
-          }
+          final color = states.contains(WidgetState.selected)
+              ? AppColors.primary
+              : (isDark ? AppColors.onSurfaceVariant : Colors.grey[600]);
           return GoogleFonts.manrope(
-            color: AppColors.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
+            color: color,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w700
+                : FontWeight.w500,
             fontSize: 12,
           );
         }),
       ),
-      // Typography: Space Grotesk for Headlines, Manrope for Body
       textTheme: TextTheme(
         displayLarge: GoogleFonts.spaceGrotesk(
-          color: AppColors.onSurface,
-          fontWeight: FontWeight.bold,
-        ),
-        headlineLarge: GoogleFonts.spaceGrotesk(
-          color: AppColors.onSurface,
+          color: isDark ? AppColors.onSurface : Colors.black,
           fontWeight: FontWeight.bold,
         ),
         headlineMedium: GoogleFonts.spaceGrotesk(
-          color: AppColors.onSurface,
+          color: isDark ? AppColors.onSurface : Colors.black,
           fontWeight: FontWeight.bold,
         ),
         titleLarge: GoogleFonts.spaceGrotesk(
-          color: AppColors.onSurface,
+          color: isDark ? AppColors.onSurface : Colors.black,
           fontWeight: FontWeight.bold,
         ),
         titleMedium: GoogleFonts.manrope(
-          color: AppColors.onSurface,
+          color: isDark ? AppColors.onSurface : Colors.black87,
           fontWeight: FontWeight.w600,
         ),
-        bodyLarge: GoogleFonts.manrope(color: AppColors.onSurface),
-        bodyMedium: GoogleFonts.manrope(color: AppColors.onSurfaceVariant),
+        bodyLarge: GoogleFonts.manrope(
+          color: isDark ? AppColors.onSurface : Colors.black87,
+        ),
+        bodyMedium: GoogleFonts.manrope(
+          color: isDark ? AppColors.onSurfaceVariant : Colors.grey[700],
+        ),
         labelSmall: GoogleFonts.manrope(
-          color: AppColors.onSurfaceVariant,
+          color: isDark ? AppColors.onSurfaceVariant : Colors.grey[600],
           letterSpacing: 1.2,
         ),
       ),
