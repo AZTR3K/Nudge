@@ -36,7 +36,7 @@ class _AddPaymentScreenState extends ConsumerState<AddPaymentScreen> {
           );
 
       // Force Riverpod to instantly refresh the Dashboard data
-      ref.invalidate(subscriptionsStreamProvider);
+      ref.invalidate(subscriptionsFutureProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

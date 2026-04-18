@@ -25,16 +25,17 @@ class SubscriptionService {
   }
 
   // NEW: Stream to fetch subscriptions in real-time
-  Stream<List<Map<String, dynamic>>> getSubscriptionsStream() {
+  Future<List<Map<String, dynamic>>> getSubscriptions() async {
     final user = _supabase.auth.currentUser;
     if (user == null) {
       throw Exception("User must be logged in to fetch subscriptions");
     }
 
-    return _supabase
+    // Notice we use .select() instead of .stream()
+    return await _supabase
         .from('subscriptions')
-        .stream(primaryKey: ['id'])
+        .select()
         .eq('user_id', user.id)
-        .order('due_date', ascending: true); // Show closest due dates first
+        .order('due_date', ascending: true);
   }
 }

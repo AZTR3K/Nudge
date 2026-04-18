@@ -10,7 +10,7 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final subscriptionsAsync = ref.watch(subscriptionsStreamProvider);
+    final subscriptionsAsync = ref.watch(subscriptionsFutureProvider);
 
     return Scaffold(
       appBar: AppBar(

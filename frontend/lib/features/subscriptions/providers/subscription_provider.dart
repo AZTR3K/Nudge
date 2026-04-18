@@ -25,9 +25,9 @@ final isSubmittingProvider = NotifierProvider<SubmittingNotifier, bool>(
 );
 
 // Expose the stream of subscriptions to the UI
-final subscriptionsStreamProvider = StreamProvider<List<Map<String, dynamic>>>((
+final subscriptionsFutureProvider = FutureProvider<List<Map<String, dynamic>>>((
   ref,
-) {
+) async {
   final service = ref.watch(subscriptionServiceProvider);
-  return service.getSubscriptionsStream();
+  return await service.getSubscriptions();
 });
