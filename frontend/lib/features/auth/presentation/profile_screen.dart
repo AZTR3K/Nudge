@@ -74,7 +74,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _updateProfilePicture() async {
     final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 80,
+    );
 
     if (image == null) return;
 
@@ -83,26 +88,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     try {
       final file = File(image.path);
       final userId = Supabase.instance.client.auth.currentUser!.id;
-      final path = 'avatars/$userId.png';
+
+      // ✅ Use 'public' bucket which exists by default in Supabase
+      // OR change 'avatars' to whatever bucket you created in Supabase dashboard
+      const bucketName =
+          'avatars'; // must match exactly what's in Supabase Storage
+      final path = '$userId/avatar.png'; // folder per user, avoids root clutter
 
       await Supabase.instance.client.storage
-          .from('avatars')
-          .upload(path, file, fileOptions: const FileOptions(upsert: true));
+          .from(bucketName)
+          .upload(
+            path,
+            file,
+            fileOptions: const FileOptions(
+              upsert: true,
+              contentType: 'image/png',
+            ),
+          );
 
-      final imageUrl = Supabase.instance.client.storage
-          .from('avatars')
-          .getPublicUrl(path);
+      // ✅ Append cache-buster so the UI refreshes even if URL is the same
+      final imageUrl =
+          '${Supabase.instance.client.storage.from(bucketName).getPublicUrl(path)}'
+          '?t=${DateTime.now().millisecondsSinceEpoch}';
 
       await Supabase.instance.client.auth.updateUser(
         UserAttributes(data: {'avatar_url': imageUrl}),
       );
+    } on StorageException catch (e) {
+      if (!mounted) return;
+      // ✅ Surface the actual Supabase storage error message
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Storage error: ${e.message}')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
-      setState(() => _isUploading = false);
+      if (mounted) setState(() => _isUploading = false);
     }
   }
 
@@ -121,52 +145,78 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         backgroundColor: Colors.transparent,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         children: [
+          // ── Avatar ──────────────────────────────────────────────
           Center(
             child: Stack(
+              clipBehavior: Clip.none,
               children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: AppColors.primary,
-                  backgroundImage: avatarUrl != null
-                      ? NetworkImage(avatarUrl)
-                      : null,
-                  child: avatarUrl == null
-                      ? const Icon(
-                          Icons.person,
-                          size: 50,
-                          color: AppColors.onPrimaryFixed,
-                        )
-                      : null,
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.primary, width: 3),
+                  ),
+                  child: CircleAvatar(
+                    radius: 52,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                    backgroundImage: avatarUrl != null
+                        ? NetworkImage(avatarUrl)
+                        : null,
+                    child: avatarUrl == null
+                        ? Icon(Icons.person, size: 52, color: AppColors.primary)
+                        : null,
+                  ),
                 ),
                 if (_isUploading)
-                  const Positioned.fill(
-                    child: CircularProgressIndicator(color: Colors.white),
+                  Positioned.fill(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black45,
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    ),
                   ),
                 Positioned(
                   bottom: 0,
                   right: 0,
                   child: GestureDetector(
-                    onTap: _updateProfilePicture,
-                    child: const CircleAvatar(
-                      radius: 18,
-                      backgroundColor: AppColors.primary,
-                      child: Icon(Icons.edit, size: 18, color: Colors.white),
+                    onTap: _isUploading ? null : _updateProfilePicture,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        size: 16,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
+
           const SizedBox(height: 16),
+
+          // ── Name & Email ────────────────────────────────────────
           GestureDetector(
             onTap: () => _editName(userName),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(userName, style: theme.textTheme.titleLarge),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 const Icon(
                   Icons.edit_outlined,
                   size: 16,
@@ -175,22 +225,134 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 4),
           Text(
             userEmail,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium,
           ),
+
           const SizedBox(height: 32),
-          const Divider(color: AppColors.outlineVariant),
-          ListTile(
-            leading: const Icon(Icons.logout, color: AppColors.error),
-            title: const Text(
-              'Log Out',
-              style: TextStyle(color: AppColors.error),
+
+          // ── Account Section ─────────────────────────────────────
+          _SectionLabel(label: 'ACCOUNT'),
+          _SettingsTile(
+            icon: Icons.person_outline,
+            label: 'Full Name',
+            value: userName,
+            onTap: () => _editName(userName),
+          ),
+          _SettingsTile(
+            icon: Icons.email_outlined,
+            label: 'Email',
+            value: userEmail,
+          ),
+
+          const SizedBox(height: 24),
+
+          // ── App Section ─────────────────────────────────────────
+          _SectionLabel(label: 'APP'),
+          _SettingsTile(
+            icon: Icons.notifications_outlined,
+            label: 'Notifications',
+            trailing: Switch(
+              value: true, // hook up to a provider when ready
+              onChanged: (_) {},
+              activeColor: AppColors.primary,
             ),
+          ),
+          _SettingsTile(
+            icon: Icons.info_outline,
+            label: 'App Version',
+            value: '1.0.0',
+          ),
+
+          const SizedBox(height: 24),
+
+          // ── Danger Zone ─────────────────────────────────────────
+          _SectionLabel(label: 'DANGER ZONE'),
+          _SettingsTile(
+            icon: Icons.logout,
+            label: 'Log Out',
+            labelColor: AppColors.error,
+            iconColor: AppColors.error,
             onTap: _showLogoutDialog,
           ),
+
+          const SizedBox(height: 32),
         ],
+      ),
+    );
+  }
+}
+
+// ── Reusable section label ───────────────────────────────────────────────────
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: AppColors.primary,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.4,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Reusable settings row ────────────────────────────────────────────────────
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.icon,
+    required this.label,
+    this.value,
+    this.onTap,
+    this.trailing,
+    this.labelColor,
+    this.iconColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? value;
+  final VoidCallback? onTap;
+  final Widget? trailing;
+  final Color? labelColor;
+  final Color? iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: iconColor ?? AppColors.primary, size: 22),
+        title: Text(
+          label,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: labelColor,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: value != null
+            ? Text(value!, style: theme.textTheme.bodyMedium)
+            : null,
+        trailing:
+            trailing ??
+            (onTap != null ? const Icon(Icons.chevron_right, size: 20) : null),
+        onTap: onTap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
