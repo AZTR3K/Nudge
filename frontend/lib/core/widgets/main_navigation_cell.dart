@@ -1,0 +1,85 @@
+import 'package:flutter/material.dart';
+import 'package:nudge/core/theme/app_colors.dart';
+import 'package:nudge/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:nudge/features/auth/presentation/profile_screen.dart';
+import 'package:nudge/features/reminders/presentation/reminders_screen.dart';
+import 'package:nudge/features/subscriptions/presentation/subscription_screen.dart';
+import 'package:nudge/features/subscriptions/presentation/add_payment_screen.dart';
+
+class MainNavigationShell extends StatefulWidget {
+  const MainNavigationShell({super.key});
+
+  @override
+  State<MainNavigationShell> createState() => _MainNavigationShellState();
+}
+
+class _MainNavigationShellState extends State<MainNavigationShell> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _screens = const [
+    DashboardScreen(),
+    SubscriptionsScreen(),
+    RemindersScreen(),
+    ProfileScreen(),
+  ];
+
+  void _onDestinationSelected(int index) {
+    setState(() => _selectedIndex = index);
+  }
+
+  void _openAddPayment() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AddPaymentScreen()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      body: IndexedStack(index: _selectedIndex, children: _screens),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openAddPayment,
+        backgroundColor: AppColors.primaryBlue,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        child: const Icon(Icons.add),
+      ),
+      // Moved to endFloat so it doesn't block the NavigationBar icons
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: _onDestinationSelected,
+        backgroundColor: isDark
+            ? AppColors.mirageSurface
+            : AppColors.lightSurface,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: isDark ? AppColors.mirageDivider : AppColors.lightDivider,
+        elevation: 8,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.credit_card_outlined),
+            selectedIcon: Icon(Icons.credit_card),
+            label: 'Subscriptions',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.notifications_outlined),
+            selectedIcon: Icon(Icons.notifications),
+            label: 'Reminders',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+}
