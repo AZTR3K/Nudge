@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/core/widgets/payment_card.dart';
-import 'package:nudge/core/widgets/status_badge.dart';
 
 class SubscriptionsScreen extends StatelessWidget {
   const SubscriptionsScreen({super.key});
@@ -8,7 +7,10 @@ class SubscriptionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Active Subscriptions')),
+      appBar: AppBar(
+        title: const Text('Active Subscriptions'),
+        backgroundColor: Colors.transparent,
+      ),
       body: ListView.separated(
         padding: const EdgeInsets.all(16.0),
         itemCount: 3,
@@ -17,8 +19,7 @@ class SubscriptionsScreen extends StatelessWidget {
           return PaymentCard(
             title: "Netflix Premium",
             amount: "22.99",
-            dueDate: "Auto-renews Oct 30",
-            status: PaymentStatus.paid,
+            dueDate: "Oct 30", // Adjusted to short format for Luminous
             onTap: () {},
           );
         },

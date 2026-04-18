@@ -11,25 +11,32 @@ class ProfileScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(
+        title: const Text('Profile'),
+        backgroundColor: Colors.transparent,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
           const CircleAvatar(
             radius: 40,
-            backgroundColor: AppColors.primaryBlue,
-            child: Icon(Icons.person, size: 40, color: Colors.white),
+            backgroundColor: AppColors.primary,
+            child: Icon(
+              Icons.person,
+              size: 40,
+              color: AppColors.onPrimaryFixed,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
-            'Nudge User', // We can fetch the real name later!
+            'Nudge User',
             textAlign: TextAlign.center,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 32),
-          const Divider(),
+          const Divider(color: AppColors.outlineVariant),
           ListTile(
             leading: const Icon(Icons.settings_outlined),
             title: const Text('App Settings'),
@@ -39,18 +46,17 @@ class ProfileScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.dark_mode_outlined),
             title: const Text('Theme'),
-            trailing: const Text('System'),
+            trailing: const Text('Dark Mode'),
             onTap: () {},
           ),
-          const Divider(),
+          const Divider(color: AppColors.outlineVariant),
           ListTile(
-            leading: const Icon(Icons.logout, color: AppColors.dangerRed),
+            leading: const Icon(Icons.logout, color: AppColors.error),
             title: const Text(
               'Log Out',
-              style: TextStyle(color: AppColors.dangerRed),
+              style: TextStyle(color: AppColors.error),
             ),
             onTap: () {
-              // Trigger our Auth Engine logic
               ref.read(authServiceProvider).signOut();
             },
           ),

@@ -35,27 +35,22 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _screens),
       floatingActionButton: FloatingActionButton(
         onPressed: _openAddPayment,
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.onPrimaryFixed,
         elevation: 4,
         child: const Icon(Icons.add),
       ),
-      // Moved to endFloat so it doesn't block the NavigationBar icons
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onDestinationSelected,
-        backgroundColor: isDark
-            ? AppColors.mirageSurface
-            : AppColors.lightSurface,
+        backgroundColor: AppColors.surfaceContainerLowest,
         surfaceTintColor: Colors.transparent,
-        shadowColor: isDark ? AppColors.mirageDivider : AppColors.lightDivider,
+        shadowColor: AppColors.outlineVariant,
         elevation: 8,
         destinations: const [
           NavigationDestination(

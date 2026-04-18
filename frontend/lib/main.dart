@@ -31,11 +31,11 @@ class SmartPaymentApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Nudge Payment Reminder',
+      title: 'Nudge',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.darkTheme, // FIX: Removed lightTheme completely
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // Using Eesa's system theme preference
+      themeMode: ThemeMode.dark, // FIX: Enforce dark mode for Luminous design
       home: const AuthGate(),
     );
   }
@@ -52,7 +52,6 @@ class AuthGate extends ConsumerWidget {
       data: (AuthState state) {
         final session = state.session;
         if (session != null) {
-          // User is logged in, show Eesa's Navigation Shell!
           return const MainNavigationShell();
         } else {
           return const LoginScreen();

@@ -1,69 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme {
-    return ThemeData(
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: AppColors.lightBg,
-      primaryColor: AppColors.primaryBlue,
-      colorScheme: const ColorScheme.light(
-        primary: AppColors.primaryBlue,
-        surface: AppColors.lightSurface,
-        error: AppColors.dangerRed,
-      ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.lightBg,
-        elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.lightTextPrimary),
-        titleTextStyle: TextStyle(
-          color: AppColors.lightTextPrimary,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: AppColors.lightTextPrimary),
-        bodyMedium: TextStyle(color: AppColors.lightTextSecondary),
-      ),
-      cardTheme: CardThemeData(
-        color: AppColors.lightSurface,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: EdgeInsets.zero,
-      ),
-    );
-  }
-
+  // We only need a dark theme for the Luminous Terminal
   static ThemeData get darkTheme {
     return ThemeData(
+      useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: AppColors.mirageBg,
-      primaryColor: AppColors.primaryBlue,
+      scaffoldBackgroundColor: AppColors.surface,
+      primaryColor: AppColors.primary,
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.primaryBlue,
-        surface: AppColors.mirageSurface,
-        error: AppColors.dangerRed,
+        primary: AppColors.primary,
+        surface: AppColors.surface,
+        error: AppColors.error,
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.mirageBg,
-        elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.mirageTextPrimary),
-        titleTextStyle: TextStyle(
-          color: AppColors.mirageTextPrimary,
-          fontSize: 20,
+      // Typography: Space Grotesk for Headlines, Manrope for Body
+      textTheme: TextTheme(
+        displayLarge: GoogleFonts.spaceGrotesk(
+          color: AppColors.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
+        headlineLarge: GoogleFonts.spaceGrotesk(
+          color: AppColors.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
+        headlineMedium: GoogleFonts.spaceGrotesk(
+          color: AppColors.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
+        titleLarge: GoogleFonts.spaceGrotesk(
+          color: AppColors.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
+        titleMedium: GoogleFonts.manrope(
+          color: AppColors.onSurface,
           fontWeight: FontWeight.w600,
         ),
-      ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: AppColors.mirageTextPrimary),
-        bodyMedium: TextStyle(color: AppColors.mirageTextSecondary),
-      ),
-      cardTheme: CardThemeData(
-        color: AppColors.mirageSurface,
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: EdgeInsets.zero,
+        bodyLarge: GoogleFonts.manrope(color: AppColors.onSurface),
+        bodyMedium: GoogleFonts.manrope(color: AppColors.onSurfaceVariant),
+        labelSmall: GoogleFonts.manrope(
+          color: AppColors.onSurfaceVariant,
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }
