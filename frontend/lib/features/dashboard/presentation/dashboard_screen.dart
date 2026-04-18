@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nudge/core/theme/app_colors.dart';
 import 'package:nudge/core/widgets/payment_card.dart';
+import 'package:nudge/features/subscriptions/presentation/history_screen.dart';
 import 'package:nudge/features/subscriptions/providers/subscription_provider.dart';
 import 'package:nudge/features/subscriptions/presentation/add_payment_screen.dart';
 import 'package:nudge/features/reminders/presentation/reminders_screen.dart'; // Add this import
@@ -179,7 +180,12 @@ class DashboardScreen extends ConsumerWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: InkWell(
-                      onTap: () {},
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const HistoryScreen(),
+                        ),
+                      ),
                       borderRadius: BorderRadius.circular(16),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 20),
