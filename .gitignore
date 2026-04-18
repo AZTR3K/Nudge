@@ -16,3 +16,4 @@ supabase/.branches/
 # OS Generated Files
 .DS_Store
 Thumbs.db
+frontend/devtools_options.yaml
