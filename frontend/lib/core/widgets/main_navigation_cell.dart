@@ -4,7 +4,6 @@ import 'package:nudge/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:nudge/features/auth/presentation/profile_screen.dart';
 import 'package:nudge/features/reminders/presentation/reminders_screen.dart';
 import 'package:nudge/features/subscriptions/presentation/subscription_screen.dart';
-import 'package:nudge/features/subscriptions/presentation/add_payment_screen.dart';
 
 class MainNavigationShell extends StatefulWidget {
   const MainNavigationShell({super.key});
@@ -27,24 +26,11 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     setState(() => _selectedIndex = index);
   }
 
-  void _openAddPayment() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const AddPaymentScreen()));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _screens),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openAddPayment,
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimaryFixed,
-        elevation: 4,
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      // The floating action button has been completely removed!
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onDestinationSelected,

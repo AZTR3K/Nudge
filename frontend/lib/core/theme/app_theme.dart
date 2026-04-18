@@ -17,8 +17,8 @@ class AppTheme {
       ),
 
       navigationBarTheme: NavigationBarThemeData(
-        // The pill background color (using low opacity so it's not blinding)
-        indicatorColor: AppColors.primary.withOpacity(0.35),
+        // FIX: Updated to withValues to satisfy the linter
+        indicatorColor: AppColors.primary.withValues(alpha: 0.35),
 
         // Handle Icon colors for selected vs unselected states
         iconTheme: WidgetStateProperty.resolveWith((states) {
