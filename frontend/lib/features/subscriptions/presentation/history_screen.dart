@@ -134,18 +134,27 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       );
                     }
 
-                    // Mapping directly to PaymentCard like DashboardScreen
                     return Column(
                       children: filteredList.map((sub) {
                         final dueDate = DateTime.parse(sub['due_date']);
                         // Format: Month Day (consistent with dashboard)
                         final formattedDate =
-                            "${_getMonth(dueDate.month)} ${dueDate.day}";
+                            "${_getMonth(dueDate.month)} ${dueDate.day.toString().padLeft(2, '0')}";
 
+                        // Check if the date has passed to dynamically style it
+                        final isPast = dueDate.isBefore(DateTime.now());
+
+                        // FIX: Updated to use subtitle and status to match the new PaymentCard
                         return PaymentCard(
                           title: sub['service_name'],
                           amount: (sub['amount'] as num).toStringAsFixed(2),
-                          dueDate: formattedDate,
+                          subtitle: isPast
+                              ? '$formattedDate • Auto-pay'
+                              : '$formattedDate • Scheduled',
+                          status: isPast
+                              ? PaymentStatus.paid
+                              : PaymentStatus.pending,
+                          icon: Icons.history,
                           onTap: () {
                             // Navigation logic
                           },
