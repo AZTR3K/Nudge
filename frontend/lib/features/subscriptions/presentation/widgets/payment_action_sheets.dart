@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:nudge/core/theme/app_colors.dart';
-import 'package:nudge/features/subscriptions/providers/subscription_provider.dart';
 
 // ---------------------------------------------------------
 // 1. Fully Functional Snooze Sheet
@@ -18,20 +17,12 @@ class SnoozeSheet extends ConsumerWidget {
     String label,
   ) async {
     try {
-      // Calculate new date based on today
       final newDate = DateTime.now().add(Duration(days: daysToAdd));
 
-      // Update Supabase
       await Supabase.instance.client
           .from('subscriptions')
-          .update({
-            'due_date': newDate.toIso8601String(),
-            'status': 'Pending', // Reset status so it shows as upcoming
-          })
+          .update({'due_date': newDate.toIso8601String(), 'status': 'Pending'})
           .eq('id', sub['id']);
-
-      // Refresh the UI globally
-      ref.invalidate(subscriptionsFutureProvider);
 
       if (context.mounted) {
         Navigator.pop(context);
@@ -58,9 +49,9 @@ class SnoozeSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surfaceContainerLow,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.all(24),
       child: SafeArea(
@@ -158,7 +149,7 @@ class SnoozeSheet extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------
-// 2. Fully Functional Edit Sheet
+// 2. Fully Functional Edit Sheet (With Email Trigger)
 // ---------------------------------------------------------
 class EditPaymentSheet extends ConsumerStatefulWidget {
   final Map<String, dynamic> sub;
@@ -181,7 +172,7 @@ class _EditPaymentSheetState extends ConsumerState<EditPaymentSheet> {
     _amountController = TextEditingController(
       text: widget.sub['amount'].toString(),
     );
-    _selectedStatus = widget.sub['status'] ?? 'Pending';
+    _selectedStatus = widget.sub['status']?.toString() ?? 'Pending';
   }
 
   @override
@@ -192,39 +183,69 @@ class _EditPaymentSheetState extends ConsumerState<EditPaymentSheet> {
   }
 
   Future<void> _saveChanges() async {
-    setState(() => _isSaving = true);
+    setState(() {
+      _isSaving = true;
+    });
+
     try {
-      await Supabase.instance.client
+      final response = await Supabase.instance.client
           .from('subscriptions')
           .update({
             'service_name': _nameController.text.trim(),
             'amount': double.parse(_amountController.text.trim()),
             'status': _selectedStatus,
           })
-          .eq('id', widget.sub['id']);
+          .eq('id', widget.sub['id'])
+          .select();
 
-      ref.invalidate(subscriptionsFutureProvider);
+      if (response.isEmpty) {
+        throw Exception("No rows were updated. Check RLS policies.");
+      }
+
+      if (_selectedStatus == 'Missed' && widget.sub['status'] != 'Missed') {
+        debugPrint("Status changed to Missed! Triggering email function...");
+
+        final updatedRecord = Map<String, dynamic>.from(widget.sub);
+        updatedRecord['status'] = 'Missed';
+
+        try {
+          final functionResponse = await Supabase.instance.client.functions
+              .invoke('send_payment_reminder', body: {'record': updatedRecord});
+          debugPrint("Email Sent Successfully: ${functionResponse.data}");
+        } catch (funcErr) {
+          debugPrint("Failed to send email: $funcErr");
+        }
+      }
 
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${_nameController.text} updated!'),
-            backgroundColor: Colors.green,
+            content: Text(
+              '${_nameController.text} marked as $_selectedStatus!',
+            ),
+            backgroundColor: _selectedStatus == 'Paid'
+                ? Colors.green
+                : AppColors.primary,
           ),
         );
       }
     } catch (e) {
+      debugPrint('UPDATE ERROR: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('Update Failed: $e'),
             backgroundColor: AppColors.error,
           ),
         );
       }
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 
@@ -232,7 +253,11 @@ class _EditPaymentSheetState extends ConsumerState<EditPaymentSheet> {
     final isSelected = _selectedStatus == status;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedStatus = status),
+        onTap: () {
+          setState(() {
+            _selectedStatus = status;
+          });
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
@@ -277,9 +302,9 @@ class _EditPaymentSheetState extends ConsumerState<EditPaymentSheet> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surfaceContainerLow,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
